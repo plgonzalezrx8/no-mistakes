@@ -9,9 +9,9 @@ description: All install options, prerequisites, update, and uninstall.
 curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
 ```
 
-The installer keeps the real binary in `~/.no-mistakes/bin` and exposes `no-mistakes` through a symlink in `~/.local/bin` or `/usr/local/bin`. That keeps future `no-mistakes update` runs in a user-owned location instead of rewriting a system binary in place.
+The installer downloads the release archive, verifies it against the release `checksums.txt`, keeps the real binary in `~/.no-mistakes/bin`, and exposes `no-mistakes` through a symlink in `~/.local/bin` or `/usr/local/bin`. That keeps future `no-mistakes update` runs in a user-owned location instead of rewriting a system binary in place.
 
-It also installs or refreshes the background daemon for you by running `no-mistakes daemon restart`, preferring a managed service (launchd on macOS, systemd user service on Linux) and falling back to a detached daemon if that path is unavailable. If the restart fails, the install command fails.
+The installer does not start or refresh the background daemon by default. Run `no-mistakes daemon restart` after installation, or set `NO_MISTAKES_START_DAEMON=1` during install if you explicitly want the installer to start the daemon and fail when daemon startup fails.
 
 Official release binaries installed this way include the default self-hosted telemetry host and website ID. Disable telemetry with `NO_MISTAKES_TELEMETRY=0`, or override the host and website ID with `NO_MISTAKES_UMAMI_HOST` and `NO_MISTAKES_UMAMI_WEBSITE_ID`.
 
@@ -21,7 +21,7 @@ Official release binaries installed this way include the default self-hosted tel
 irm https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.ps1 | iex
 ```
 
-Installs the binary and restarts the background daemon automatically with `no-mistakes.exe daemon restart`, preferring a managed Task Scheduler task and falling back to a detached daemon if needed. If the restart fails, the install command fails.
+Downloads the release archive, verifies it against the release `checksums.txt`, and installs the binary into `%LOCALAPPDATA%\no-mistakes`. It does not restart the background daemon by default. Run `no-mistakes.exe daemon restart` after installation, or set `NO_MISTAKES_START_DAEMON=1` during install if you explicitly want daemon startup checked by the installer.
 
 Official release binaries installed this way include the default self-hosted telemetry host and website ID. Disable telemetry with `NO_MISTAKES_TELEMETRY=0`, or override the host and website ID with `NO_MISTAKES_UMAMI_HOST` and `NO_MISTAKES_UMAMI_WEBSITE_ID`.
 

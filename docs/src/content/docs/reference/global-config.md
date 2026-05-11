@@ -33,12 +33,12 @@ ci_timeout: "4h"
 log_level: info
 
 auto_fix:
-  rebase: 3
+  rebase: 0
   review: 0
-  test: 3
-  document: 3
-  lint: 3
-  ci: 3
+  test: 0
+  document: 0
+  lint: 0
+  ci: 0
 
 intent:
   enabled: true
@@ -137,7 +137,7 @@ For structured `codex` runs, no-mistakes also appends its own `--output-schema <
 Smart defaults:
 
 - For `claude`, supplying `--permission-mode` (or `--dangerously-skip-permissions`) suppresses the default `--dangerously-skip-permissions`.
-- For `codex`, supplying `--ask-for-approval`, `--sandbox`, or `--dangerously-bypass-approvals-and-sandbox` suppresses the default `--dangerously-bypass-approvals-and-sandbox`.
+- For `codex`, no-mistakes defaults to `--sandbox workspace-write --ask-for-approval on-request`. Supplying `--ask-for-approval`, `--sandbox`, or `--dangerously-bypass-approvals-and-sandbox` suppresses those defaults.
 
 Example:
 
@@ -196,16 +196,16 @@ Maximum auto-fix attempts per step. Set a step to `0` to disable auto-fix (findi
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `auto_fix.rebase` | `int` | `3` | Rebase conflict auto-fix attempts |
+| `auto_fix.rebase` | `int` | `0` | Rebase conflict auto-fix attempts |
 | `auto_fix.review` | `int` | `0` | Review finding auto-fix attempts |
-| `auto_fix.test` | `int` | `3` | Test failure auto-fix attempts |
-| `auto_fix.document` | `int` | `3` | Documentation update auto-fix attempts |
-| `auto_fix.lint` | `int` | `3` | Lint issue auto-fix attempts |
-| `auto_fix.ci` | `int` | `3` | CI auto-fix attempts for CI failures, plus GitHub and GitLab merge conflicts |
+| `auto_fix.test` | `int` | `0` | Test failure auto-fix attempts |
+| `auto_fix.document` | `int` | `0` | Documentation update auto-fix attempts |
+| `auto_fix.lint` | `int` | `0` | Lint issue auto-fix attempts |
+| `auto_fix.ci` | `int` | `0` | CI auto-fix attempts for CI failures, plus GitHub and GitLab merge conflicts |
 
 Legacy alias: `auto_fix.babysit`.
 
-These are global defaults. Per-repo config can override individual steps.
+These are global defaults. Auto-fix is opt-in by default; set a positive value globally or per repo to allow automatic fix attempts for that step.
 
 ### intent
 

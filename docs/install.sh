@@ -4,6 +4,7 @@ set -e
 REPO="kunchenguid/no-mistakes"
 INSTALL_DIR="${NO_MISTAKES_INSTALL_DIR:-$HOME/.no-mistakes/bin}"
 LINK_DIR="${NO_MISTAKES_LINK_DIR:-}"
+START_DAEMON="${NO_MISTAKES_START_DAEMON:-0}"
 
 if [ -z "$LINK_DIR" ]; then
   case ":$PATH:" in
@@ -37,13 +38,41 @@ fi
 
 FILENAME="no-mistakes-${VERSION}-${OS}-${ARCH}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${VERSION}/${FILENAME}"
+CHECKSUMS_URL="https://github.com/${REPO}/releases/download/${VERSION}/checksums.txt"
 
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
+checksum_file() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    echo "No SHA-256 checksum tool found (need sha256sum or shasum)" >&2
+    return 1
+  fi
+}
+
+archive_path="${TMPDIR}/${FILENAME}"
+checksums_path="${TMPDIR}/checksums.txt"
+
 echo "Downloading no-mistakes ${VERSION} for ${OS}/${ARCH}..."
-curl -fsSL "$URL" -o "${TMPDIR}/${FILENAME}"
-tar xzf "${TMPDIR}/${FILENAME}" -C "$TMPDIR"
+curl -fsSL "$URL" -o "$archive_path"
+curl -fsSL "$CHECKSUMS_URL" -o "$checksums_path"
+
+expected_checksum="$(awk -v file="$FILENAME" '$2 == file {print $1; found=1} END { if (!found) exit 1 }' "$checksums_path")"
+if [ -z "$expected_checksum" ]; then
+  echo "checksum not found for ${FILENAME}"
+  exit 1
+fi
+actual_checksum="$(checksum_file "$archive_path")"
+if [ "$actual_checksum" != "$expected_checksum" ]; then
+  echo "checksum mismatch for ${FILENAME}: got ${actual_checksum}, want ${expected_checksum}"
+  exit 1
+fi
+
+tar xzf "$archive_path" -C "$TMPDIR"
 
 if ! mkdir -p "$INSTALL_DIR"; then
   echo "Could not create install directory: $INSTALL_DIR"
@@ -77,7 +106,11 @@ fi
 echo "no-mistakes ${VERSION} installed to ${BIN_PATH}"
 echo "Command path: ${LINK_PATH} -> ${BIN_PATH}"
 
-"$BIN_PATH" daemon restart >/dev/null
+if [ "$START_DAEMON" = "1" ]; then
+  "$BIN_PATH" daemon restart >/dev/null
+else
+  echo "Daemon not started. Run 'no-mistakes daemon restart' or set NO_MISTAKES_START_DAEMON=1 during install."
+fi
 
 case ":$PATH:" in
   *":$LINK_DIR:"*) ;;

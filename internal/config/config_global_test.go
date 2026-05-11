@@ -47,6 +47,12 @@ func TestEnsureDefaultGlobalConfig_CreatesFile(t *testing.T) {
 		"ci_timeout:",
 		"log_level: info",
 		"# agent_path_override:",
+		"  rebase: 0",
+		"  lint: 0",
+		"  test: 0",
+		"  review: 0",
+		"  document: 0",
+		"  ci: 0",
 	} {
 		if !strings.Contains(content, want) {
 			t.Errorf("default config missing %q", want)

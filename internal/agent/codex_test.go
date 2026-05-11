@@ -17,7 +17,8 @@ func TestCodexAgent_BuildArgs(t *testing.T) {
 	expected := []string{
 		"exec", "fix the bug",
 		"--json",
-		"--dangerously-bypass-approvals-and-sandbox",
+		"--sandbox", "workspace-write",
+		"--ask-for-approval", "on-request",
 		"--color", "never",
 	}
 
@@ -40,7 +41,8 @@ func TestCodexAgent_BuildArgs_ExtraArgsAfterExec(t *testing.T) {
 		"-m", "gpt-5.4",
 		"fix it",
 		"--json",
-		"--dangerously-bypass-approvals-and-sandbox",
+		"--sandbox", "workspace-write",
+		"--ask-for-approval", "on-request",
 		"--color", "never",
 	}
 	if len(args) != len(expected) {
@@ -88,7 +90,8 @@ func TestCodexAgent_BuildArgs_WithOutputSchema(t *testing.T) {
 		"exec", "review",
 		"--json",
 		"--output-schema", "/tmp/schema.json",
-		"--dangerously-bypass-approvals-and-sandbox",
+		"--sandbox", "workspace-write",
+		"--ask-for-approval", "on-request",
 		"--color", "never",
 	}
 	if len(args) != len(want) {

@@ -110,8 +110,8 @@ func (a *codexAgent) Close() error { return nil }
 
 // buildArgs constructs the codex CLI arguments. User-supplied extraArgs are
 // inserted between "exec" and the prompt so user flags (e.g. -m, --sandbox)
-// take effect. If the user declared their own execution-mode flag, the
-// default --dangerously-bypass-approvals-and-sandbox is not added.
+// take effect. If the user declared their own execution-mode flag, the safer
+// default sandbox and approval flags are not added.
 func (a *codexAgent) buildArgs(prompt, schemaPath string) []string {
 	args := make([]string, 0, len(a.extraArgs)+8)
 	args = append(args, "exec")
@@ -121,7 +121,7 @@ func (a *codexAgent) buildArgs(prompt, schemaPath string) []string {
 		args = append(args, "--output-schema", schemaPath)
 	}
 	if !codexUserSetExecutionMode(a.extraArgs) {
-		args = append(args, "--dangerously-bypass-approvals-and-sandbox")
+		args = append(args, "--sandbox", "workspace-write", "--ask-for-approval", "on-request")
 	}
 	args = append(args, "--color", "never")
 	return args

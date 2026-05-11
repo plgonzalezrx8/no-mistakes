@@ -42,7 +42,7 @@ type Executor struct {
 	onEvent EventFunc
 
 	mu          sync.Mutex
-	approvalCh  chan approvalResponse // buffered channel for approval responses
+	approvalCh  chan approvalResponse // per-wait buffered channel for approval responses
 	waiting     bool                  // true when blocked on approval
 	waitingStep types.StepName        // which step is currently awaiting approval
 }
@@ -95,10 +95,15 @@ func (e *Executor) RespondWithOverrides(step types.StepName, action types.Approv
 		e.mu.Unlock()
 		return fmt.Errorf("step mismatch: responding to %q but %q is awaiting approval", step, e.waitingStep)
 	}
+	approvalCh := e.approvalCh
+	if approvalCh == nil {
+		e.mu.Unlock()
+		return fmt.Errorf("no approval receiver for step %q", step)
+	}
 	e.waiting = false
 	e.mu.Unlock()
 
-	e.approvalCh <- approvalResponse{
+	approvalCh <- approvalResponse{
 		action:        action,
 		findingIDs:    findingIDs,
 		instructions:  instructions,
@@ -366,6 +371,7 @@ func (e *Executor) executeStep(ctx context.Context, step Step, sr *db.StepResult
 		e.mu.Lock()
 		e.waiting = true
 		e.waitingStep = stepName
+		e.approvalCh = make(chan approvalResponse, 1)
 		e.mu.Unlock()
 
 		// Step needs approval - store execution-only duration and wait for user action.
@@ -480,20 +486,26 @@ func roundInsertID(_ string, inserted *db.StepRound, err error) string {
 // waitForApproval blocks until a user action arrives or context is cancelled.
 // The caller must set e.waiting and e.waitingStep before calling this method.
 func (e *Executor) waitForApproval(ctx context.Context, stepName types.StepName) (approvalResponse, error) {
+	e.mu.Lock()
+	approvalCh := e.approvalCh
+	if !e.waiting || e.waitingStep != stepName || approvalCh == nil {
+		approvalCh = make(chan approvalResponse, 1)
+		e.approvalCh = approvalCh
+	}
+	e.mu.Unlock()
+
 	defer func() {
 		e.mu.Lock()
 		e.waiting = false
 		e.waitingStep = ""
-		e.mu.Unlock()
-		// Drain any stale response that arrived after context cancellation
-		select {
-		case <-e.approvalCh:
-		default:
+		if e.approvalCh == approvalCh {
+			e.approvalCh = nil
 		}
+		e.mu.Unlock()
 	}()
 
 	select {
-	case response := <-e.approvalCh:
+	case response := <-approvalCh:
 		return response, nil
 	case <-ctx.Done():
 		return approvalResponse{}, context.Cause(ctx)

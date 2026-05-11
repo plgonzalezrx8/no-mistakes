@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -10,6 +11,19 @@ import (
 	"github.com/kunchenguid/no-mistakes/internal/telemetry"
 	"github.com/kunchenguid/no-mistakes/internal/types"
 )
+
+func TestExecutor_WaitForApprovalIgnoresStaleResponseFromPreviousWait(t *testing.T) {
+	exec := &Executor{approvalCh: make(chan approvalResponse, 1)}
+	exec.approvalCh <- approvalResponse{action: types.ActionApprove}
+
+	ctx, cancel := context.WithTimeoutCause(context.Background(), 50*time.Millisecond, errors.New("approval cancelled"))
+	defer cancel()
+
+	response, err := exec.waitForApproval(ctx, types.StepReview)
+	if !errors.Is(err, context.DeadlineExceeded) && err == nil {
+		t.Fatalf("waitForApproval consumed stale response unexpectedly: response=%+v", response)
+	}
+}
 
 func TestExecutor_ApprovalFix(t *testing.T) {
 	database, p, run, repo := setupTest(t)

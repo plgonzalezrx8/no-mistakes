@@ -80,23 +80,23 @@ func TestMerge_AutoFixDefaults(t *testing.T) {
 	repo := &RepoConfig{}
 
 	cfg := Merge(global, repo)
-	if cfg.AutoFix.Lint != 3 {
-		t.Errorf("lint = %d, want 3", cfg.AutoFix.Lint)
+	if cfg.AutoFix.Lint != 0 {
+		t.Errorf("lint = %d, want 0", cfg.AutoFix.Lint)
 	}
-	if cfg.AutoFix.Test != 3 {
-		t.Errorf("test = %d, want 3", cfg.AutoFix.Test)
+	if cfg.AutoFix.Test != 0 {
+		t.Errorf("test = %d, want 0", cfg.AutoFix.Test)
 	}
 	if cfg.AutoFix.Review != 0 {
 		t.Errorf("review = %d, want 0", cfg.AutoFix.Review)
 	}
-	if cfg.AutoFix.Document != 3 {
-		t.Errorf("document = %d, want 3", cfg.AutoFix.Document)
+	if cfg.AutoFix.Document != 0 {
+		t.Errorf("document = %d, want 0", cfg.AutoFix.Document)
 	}
-	if cfg.AutoFix.CI != 3 {
-		t.Errorf("ci = %d, want 3", cfg.AutoFix.CI)
+	if cfg.AutoFix.CI != 0 {
+		t.Errorf("ci = %d, want 0", cfg.AutoFix.CI)
 	}
-	if cfg.AutoFix.Rebase != 3 {
-		t.Errorf("rebase = %d, want 3", cfg.AutoFix.Rebase)
+	if cfg.AutoFix.Rebase != 0 {
+		t.Errorf("rebase = %d, want 0", cfg.AutoFix.Rebase)
 	}
 }
 
@@ -115,14 +115,14 @@ func TestMerge_AutoFixGlobalOverridesDefaults(t *testing.T) {
 	if cfg.AutoFix.Lint != 5 {
 		t.Errorf("lint = %d, want 5 (global override)", cfg.AutoFix.Lint)
 	}
-	if cfg.AutoFix.Test != 3 {
-		t.Errorf("test = %d, want 3 (default)", cfg.AutoFix.Test)
+	if cfg.AutoFix.Test != 0 {
+		t.Errorf("test = %d, want 0 (default)", cfg.AutoFix.Test)
 	}
 	if cfg.AutoFix.CI != 0 {
 		t.Errorf("ci =%d, want 0 (global override)", cfg.AutoFix.CI)
 	}
-	if cfg.AutoFix.Rebase != 3 {
-		t.Errorf("rebase = %d, want 3 (default, no override)", cfg.AutoFix.Rebase)
+	if cfg.AutoFix.Rebase != 0 {
+		t.Errorf("rebase = %d, want 0 (default, no override)", cfg.AutoFix.Rebase)
 	}
 }
 
@@ -147,8 +147,8 @@ func TestMerge_AutoFixRepoOverridesGlobal(t *testing.T) {
 	if cfg.AutoFix.Review != 0 {
 		t.Errorf("review = %d, want 0 (repo override)", cfg.AutoFix.Review)
 	}
-	if cfg.AutoFix.Test != 3 {
-		t.Errorf("test = %d, want 3 (default, no override)", cfg.AutoFix.Test)
+	if cfg.AutoFix.Test != 0 {
+		t.Errorf("test = %d, want 0 (default, no override)", cfg.AutoFix.Test)
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -62,7 +64,7 @@ func TestInstallScriptReplacesExistingPathEntryWithSymlink(t *testing.T) {
 	assertSymlinkTarget(t, oldPath, realBin)
 }
 
-func TestInstallScriptRestartsDaemonAfterInstall(t *testing.T) {
+func TestInstallScriptDoesNotRestartDaemonByDefault(t *testing.T) {
 	skipInstallScriptTestsOnWindows(t)
 
 	home := t.TempDir()
@@ -81,15 +83,43 @@ func TestInstallScriptRestartsDaemonAfterInstall(t *testing.T) {
 	})
 
 	data, err := os.ReadFile(callLog)
+	if err != nil && !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "daemon restart") {
+		t.Fatalf("install.sh should not restart the daemon by default, got calls %q", string(data))
+	}
+}
+
+func TestInstallScriptRestartsDaemonWhenExplicitlyRequested(t *testing.T) {
+	skipInstallScriptTestsOnWindows(t)
+
+	home := t.TempDir()
+	archivePath := filepath.Join(t.TempDir(), "no-mistakes-v1.2.3-darwin-arm64.tar.gz")
+	callLog := filepath.Join(t.TempDir(), "calls.log")
+	makeInstallArchive(t, archivePath, "#!/bin/sh\nprintf '%s\n' \"$*\" >> \"$NO_MISTAKES_CALL_LOG\"\n")
+	fakeBin := makeFakeInstallCommands(t)
+	localBin := filepath.Join(home, ".local", "bin")
+	if err := os.MkdirAll(localBin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runInstallScript(t, home, fakeBin, map[string]string{
+		"FAKE_RELEASE_ARCHIVE":     archivePath,
+		"NO_MISTAKES_CALL_LOG":     callLog,
+		"NO_MISTAKES_START_DAEMON": "1",
+	})
+
+	data, err := os.ReadFile(callLog)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(data), "daemon restart") {
-		t.Fatalf("install.sh should restart the daemon after install, got calls %q", string(data))
+		t.Fatalf("install.sh should restart the daemon when requested, got calls %q", string(data))
 	}
 }
 
-func TestInstallScriptFailsWhenDaemonRestartFails(t *testing.T) {
+func TestInstallScriptFailsWhenExplicitDaemonRestartFails(t *testing.T) {
 	skipInstallScriptTestsOnWindows(t)
 
 	home := t.TempDir()
@@ -103,11 +133,12 @@ func TestInstallScriptFailsWhenDaemonRestartFails(t *testing.T) {
 	}
 
 	output, err := runInstallScriptCommand(t, home, fakeBin, map[string]string{
-		"FAKE_RELEASE_ARCHIVE": archivePath,
-		"NO_MISTAKES_CALL_LOG": callLog,
+		"FAKE_RELEASE_ARCHIVE":     archivePath,
+		"NO_MISTAKES_CALL_LOG":     callLog,
+		"NO_MISTAKES_START_DAEMON": "1",
 	})
 	if err == nil {
-		t.Fatalf("install.sh should fail when daemon restart fails\n%s", output)
+		t.Fatalf("install.sh should fail when requested daemon restart fails\n%s", output)
 	}
 
 	data, err := os.ReadFile(callLog)
@@ -115,27 +146,56 @@ func TestInstallScriptFailsWhenDaemonRestartFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(data), "daemon restart") {
-		t.Fatalf("install.sh should still attempt daemon restart, got calls %q", string(data))
+		t.Fatalf("install.sh should attempt requested daemon restart, got calls %q", string(data))
 	}
 }
 
-func TestPowerShellInstallScriptChecksDaemonRestartFailure(t *testing.T) {
+func TestInstallScriptFailsOnChecksumMismatch(t *testing.T) {
+	skipInstallScriptTestsOnWindows(t)
+
+	home := t.TempDir()
+	archivePath := filepath.Join(t.TempDir(), "no-mistakes-v1.2.3-darwin-arm64.tar.gz")
+	checksumPath := filepath.Join(t.TempDir(), "checksums.txt")
+	makeInstallArchive(t, archivePath, "#!/bin/sh\nexit 0\n")
+	if err := os.WriteFile(checksumPath, []byte("deadbeef  no-mistakes-v1.2.3-darwin-arm64.tar.gz\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fakeBin := makeFakeInstallCommands(t)
+	localBin := filepath.Join(home, ".local", "bin")
+	if err := os.MkdirAll(localBin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	output, err := runInstallScriptCommand(t, home, fakeBin, map[string]string{
+		"FAKE_RELEASE_ARCHIVE":   archivePath,
+		"FAKE_RELEASE_CHECKSUMS": checksumPath,
+	})
+	if err == nil {
+		t.Fatalf("install.sh should fail on checksum mismatch\n%s", output)
+	}
+	if !strings.Contains(string(output), "checksum") {
+		t.Fatalf("install.sh should explain checksum failure, got:\n%s", output)
+	}
+}
+
+func TestPowerShellInstallScriptVerifiesChecksumAndDoesNotRestartDaemonByDefault(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("docs", "install.ps1"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	text := string(data)
-	if !strings.Contains(text, "$restart = Start-Process -FilePath \"$installDir\\no-mistakes.exe\" -ArgumentList @(") {
-		t.Fatal("install.ps1 should run daemon restart in a way that exposes the exit code")
-	}
-	if !strings.Contains(text, "-Wait -PassThru") {
-		t.Fatal("install.ps1 should wait for daemon restart to finish and inspect the process result")
-	}
-	if !strings.Contains(text, "if ($restart.ExitCode -ne 0)") {
-		t.Fatal("install.ps1 should fail the install when daemon restart returns a non-zero exit code")
-	}
-	if !strings.Contains(text, "throw \"Failed to restart daemon (exit code $($restart.ExitCode))\"") {
-		t.Fatal("install.ps1 should surface the daemon restart exit code")
+	for _, want := range []string{
+		"checksums.txt",
+		"Get-FileHash",
+		"Checksum mismatch",
+		"$env:NO_MISTAKES_START_DAEMON -eq \"1\"",
+		"Start-Process -FilePath \"$installDir\\no-mistakes.exe\"",
+		"-Wait -PassThru",
+		"if ($restart.ExitCode -ne 0)",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("install.ps1 should contain %q", want)
+		}
 	}
 }
 
@@ -156,6 +216,9 @@ func runInstallScript(t *testing.T, home, fakeBin string, extraEnv map[string]st
 
 func runInstallScriptCommand(t *testing.T, home, fakeBin string, extraEnv map[string]string) ([]byte, error) {
 	t.Helper()
+	if archivePath := extraEnv["FAKE_RELEASE_ARCHIVE"]; archivePath != "" && extraEnv["FAKE_RELEASE_CHECKSUMS"] == "" {
+		extraEnv["FAKE_RELEASE_CHECKSUMS"] = makeChecksumFile(t, archivePath)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -189,6 +252,21 @@ func filteredEnv(env []string, excluded ...string) []string {
 		filtered = append(filtered, entry)
 	}
 	return filtered
+}
+
+func makeChecksumFile(t *testing.T, archivePath string) string {
+	t.Helper()
+	data, err := os.ReadFile(archivePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checksumPath := filepath.Join(t.TempDir(), "checksums.txt")
+	sum := sha256.Sum256(data)
+	line := fmt.Sprintf("%x  %s\n", sum, filepath.Base(archivePath))
+	if err := os.WriteFile(checksumPath, []byte(line), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return checksumPath
 }
 
 func makeInstallArchive(t *testing.T, archivePath, binaryContent string) {
@@ -239,10 +317,13 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 if [ -n "$out" ]; then
-  cp "$FAKE_RELEASE_ARCHIVE" "$out"
+  case "$url" in
+    *checksums.txt) cp "$FAKE_RELEASE_CHECKSUMS" "$out" ;;
+    *) cp "$FAKE_RELEASE_ARCHIVE" "$out" ;;
+  esac
   exit 0
 fi
-	printf '{"tag_name":"v1.2.3"}'
+printf '{"tag_name":"v1.2.3"}'
 `)
 	writeExecutable(t, filepath.Join(binDir, "sudo"), "#!/bin/sh\nexec \"$@\"\n")
 	return binDir
