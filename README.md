@@ -43,6 +43,8 @@ Full documentation: <https://kunchenguid.github.io/no-mistakes/>
 curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
 ```
 
+The installer verifies release checksums and does not start the daemon unless you set `NO_MISTAKES_START_DAEMON=1`; run `no-mistakes daemon restart` when you are ready to enable the background service.
+
 Windows, Go install, and build-from-source instructions are in the [installation guide](https://kunchenguid.github.io/no-mistakes/start-here/installation/).
 
 ## Quick Start

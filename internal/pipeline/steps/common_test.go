@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -319,6 +320,25 @@ func TestRunShellCommand(t *testing.T) {
 			t.Errorf("exit code = %d, want 42", code)
 		}
 	})
+}
+
+func TestRunShellCommandCancellationKillsChildProcess(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("process-group cancellation is Unix-specific")
+	}
+	dir := t.TempDir()
+	marker := filepath.Join(dir, "orphaned-child")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	_, _, _ = runShellCommand(ctx, dir, fmt.Sprintf("(sleep 0.5; printf orphan > %q) & wait", marker))
+
+	time.Sleep(700 * time.Millisecond)
+	if _, err := os.Stat(marker); err == nil {
+		t.Fatal("cancelled shell command left a child process running")
+	} else if !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
 }
 
 func TestStepCLIAvailable_ResolvesExecutableSuffixFromCustomPath(t *testing.T) {

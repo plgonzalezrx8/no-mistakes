@@ -150,12 +150,12 @@ log_level: info
 #
 # Maximum auto-fix attempts per step (0 = disabled, requires manual approval)
 auto_fix:
-  rebase: 3
-  lint: 3
-  test: 3
+  rebase: 0
+  lint: 0
+  test: 0
   review: 0
-  document: 3
-  ci: 3
+  document: 0
+  ci: 0
 
 # User-intent extraction. When you push a branch, no-mistakes can read recent
 # transcripts from your local agent (Claude Code, Codex, OpenCode, Rovo Dev),
@@ -519,12 +519,12 @@ func applyIntentOverrides(dst *Intent, src *IntentRaw) {
 // autoFixDefaults returns the default auto-fix configuration.
 func autoFixDefaults() AutoFix {
 	return AutoFix{
-		Lint:     3,
-		Test:     3,
+		Lint:     0,
+		Test:     0,
 		Review:   0,
-		Document: 3,
-		CI:       3,
-		Rebase:   3,
+		Document: 0,
+		CI:       0,
+		Rebase:   0,
 	}
 }
 

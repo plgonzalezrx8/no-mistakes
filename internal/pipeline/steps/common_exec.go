@@ -264,6 +264,7 @@ func runShellCommandWithEnv(ctx context.Context, dir string, env []string, cmdSt
 	if len(env) > 0 {
 		cmd.Env = mergeEnv(env)
 	}
+	configureShellCommand(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
