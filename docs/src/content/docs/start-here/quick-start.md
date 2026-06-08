@@ -11,7 +11,7 @@ This walks you through your first gated push. For install options other than the
 curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
 ```
 
-The installer drops the binary in `~/.no-mistakes/bin`, links it into `~/.local/bin` or `/usr/local/bin`, and restarts the background daemon. If the restart fails, the install command fails.
+The installer drops the binary in `~/.no-mistakes/bin` and links it into `~/.local/bin` or `/usr/local/bin`. The daemon is started later by `no-mistakes init`, `no-mistakes attach`, `no-mistakes rerun`, or an explicit `no-mistakes daemon start`.
 
 Official release binaries installed this way include the default self-hosted telemetry host and website ID. Disable telemetry with `NO_MISTAKES_TELEMETRY=0`, or override the host and website ID with `NO_MISTAKES_UMAMI_HOST` and `NO_MISTAKES_UMAMI_WEBSITE_ID`.
 

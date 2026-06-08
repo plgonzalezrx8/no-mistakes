@@ -70,7 +70,6 @@ agent_args_override:
   codex:
     - -m
     - gpt-5.4
-    - --full-auto
 
 # How long the CI step waits for provider CI status, and GitHub/GitLab PR mergeability, before timing out.
 ci_timeout: "4h"  # any Go duration string

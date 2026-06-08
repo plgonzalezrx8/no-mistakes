@@ -130,14 +130,14 @@ Uses indicators: `✓` (available), `–` (not found, optional), `✗` (problem 
 
 ## no-mistakes update
 
-Update the installed binary and reset the daemon.
+Update the installed binary and reset the daemon when needed.
 
 ```sh
 no-mistakes update
 no-mistakes update --beta
 ```
 
-Downloads the latest release, verifies the SHA-256 checksum, atomically replaces the running binary, and resets the daemon when it is running or stale daemon artifacts exist so the new executable is picked up, preferring the managed service path and falling back to a detached daemon if service startup is unavailable or fails. By default this installs the latest stable release. Pass `--beta` to include prereleases and install the latest beta when one is newer than the current stable release. If the daemon is running, update first requires it to already be using the same executable path as the binary running `no-mistakes update`; if that daemon executable path cannot be determined or it points to a different binary, the update aborts before replacement. If the daemon does not come back cleanly after a successful replacement, the command reports that failure. On macOS, removes the quarantine extended attribute.
+Downloads the latest release, verifies the SHA-256 checksum, atomically replaces the running binary, and resets the daemon when it is running or stale daemon artifacts exist so the new executable is picked up, preferring the managed service path and falling back to a detached daemon if service startup is unavailable or fails. By default this installs the latest stable release. Pass `--beta` to include prereleases and install the latest beta when one is newer than the current stable release. If the daemon is running, update first requires it to already be using the same executable path as the binary running `no-mistakes update`; if that daemon executable path cannot be determined or it points to a different binary, the update aborts before replacement. When a daemon reset is needed and the daemon does not come back cleanly after a successful replacement, the command reports that failure. On macOS, removes the quarantine extended attribute.
 
 Because `update` installs the latest official release binary, the replacement binary includes the default self-hosted telemetry host and website ID. Disable telemetry with `NO_MISTAKES_TELEMETRY=0`, or override the host and website ID with `NO_MISTAKES_UMAMI_HOST` and `NO_MISTAKES_UMAMI_WEBSITE_ID`.
 
@@ -161,7 +161,7 @@ Stop the running daemon process.
 no-mistakes daemon stop
 ```
 
-This does not remove the managed service. A later `no-mistakes`, `no-mistakes daemon start`, `init`, `attach`, `rerun`, or `update` can start the daemon again through the same service manager when available, or as a detached daemon otherwise.
+This does not remove the managed service. A later `no-mistakes`, `no-mistakes daemon start`, `init`, `attach`, or `rerun` can start the daemon again through the same service manager when available, or as a detached daemon otherwise.
 
 ## no-mistakes daemon restart
 

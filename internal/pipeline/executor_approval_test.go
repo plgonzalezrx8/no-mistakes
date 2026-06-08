@@ -25,6 +25,30 @@ func TestExecutor_WaitForApprovalIgnoresStaleResponseFromPreviousWait(t *testing
 	}
 }
 
+func TestExecutor_WaitForApprovalConsumesFastResponseForCurrentStep(t *testing.T) {
+	approvalCh := make(chan approvalResponse, 1)
+	approvalCh <- approvalResponse{action: types.ActionFix, findingIDs: []string{"f1"}}
+	exec := &Executor{
+		approvalCh:  approvalCh,
+		waiting:     false,
+		waitingStep: types.StepReview,
+	}
+
+	ctx, cancel := context.WithTimeoutCause(context.Background(), time.Second, errors.New("approval cancelled"))
+	defer cancel()
+
+	response, err := exec.waitForApproval(ctx, types.StepReview)
+	if err != nil {
+		t.Fatalf("waitForApproval returned error: %v", err)
+	}
+	if response.action != types.ActionFix {
+		t.Fatalf("action = %q, want %q", response.action, types.ActionFix)
+	}
+	if len(response.findingIDs) != 1 || response.findingIDs[0] != "f1" {
+		t.Fatalf("findingIDs = %v, want [f1]", response.findingIDs)
+	}
+}
+
 func TestExecutor_ApprovalFix(t *testing.T) {
 	database, p, run, repo := setupTest(t)
 	workDir := t.TempDir()
