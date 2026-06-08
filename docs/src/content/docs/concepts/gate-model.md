@@ -102,9 +102,9 @@ A long-running background process that manages pipeline runs. It:
 - Persists state to SQLite
 - Streams events to connected TUI clients via IPC
 
-The installer prefers setting up the daemon as a managed background service, and
-`no-mistakes`, `init`, `attach`, `rerun`, and `update` make sure the daemon is
-running when needed. Bare `no-mistakes` then attaches to the active run on the
+Installers only place the binary on disk. `no-mistakes`, `init`, `attach`,
+`rerun`, and `update` make sure the daemon is running when needed. Bare
+`no-mistakes` then attaches to the active run on the
 current branch when one exists, or routes to the setup wizard when it needs to
 create a new branch/run. If managed service install or startup is unavailable
 or fails, startup falls back to a detached daemon process. `update` resets the

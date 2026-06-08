@@ -3,10 +3,10 @@ title: Daemon & Worktrees
 description: Background process management, worktrees, state, and recovery.
 ---
 
-The daemon is a long-running background process that manages pipeline runs. The
-installer prefers setting it up as a managed background service, and
-`no-mistakes`, `init`, `attach`, `rerun`, and `update` keep that service
-installed and running for you when that path is available.
+The daemon is a long-running background process that manages pipeline runs.
+Installers only place the binary on disk. `no-mistakes`, `init`, `attach`,
+`rerun`, and `update` keep the managed service installed and running for you
+when that path is available.
 
 ## Why a daemon exists
 

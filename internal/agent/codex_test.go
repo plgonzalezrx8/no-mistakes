@@ -18,7 +18,6 @@ func TestCodexAgent_BuildArgs(t *testing.T) {
 		"exec", "fix the bug",
 		"--json",
 		"--sandbox", "workspace-write",
-		"--ask-for-approval", "on-request",
 		"--color", "never",
 	}
 
@@ -42,7 +41,6 @@ func TestCodexAgent_BuildArgs_ExtraArgsAfterExec(t *testing.T) {
 		"fix it",
 		"--json",
 		"--sandbox", "workspace-write",
-		"--ask-for-approval", "on-request",
 		"--color", "never",
 	}
 	if len(args) != len(expected) {
@@ -91,7 +89,6 @@ func TestCodexAgent_BuildArgs_WithOutputSchema(t *testing.T) {
 		"--json",
 		"--output-schema", "/tmp/schema.json",
 		"--sandbox", "workspace-write",
-		"--ask-for-approval", "on-request",
 		"--color", "never",
 	}
 	if len(args) != len(want) {
@@ -100,6 +97,17 @@ func TestCodexAgent_BuildArgs_WithOutputSchema(t *testing.T) {
 	for i := range want {
 		if args[i] != want[i] {
 			t.Fatalf("arg[%d]: expected %q, got %q in %v", i, want[i], args[i], args)
+		}
+	}
+}
+
+func TestCodexAgent_BuildArgs_DefaultsAvoidUnsupportedApprovalFlag(t *testing.T) {
+	ca := &codexAgent{bin: "codex"}
+	args := ca.buildArgs("fix the bug", "")
+
+	for _, arg := range args {
+		if arg == "--ask-for-approval" || strings.HasPrefix(arg, "--ask-for-approval=") {
+			t.Fatalf("default codex args should not include unsupported approval flag: %v", args)
 		}
 	}
 }

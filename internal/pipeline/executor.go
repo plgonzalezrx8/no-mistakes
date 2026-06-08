@@ -484,11 +484,13 @@ func roundInsertID(_ string, inserted *db.StepRound, err error) string {
 }
 
 // waitForApproval blocks until a user action arrives or context is cancelled.
-// The caller must set e.waiting and e.waitingStep before calling this method.
+// The caller sets e.waiting and e.waitingStep before calling this method, but
+// Respond can flip waiting false after queuing a fast approval. In that case the
+// matching channel must be reused so the early response is not stranded.
 func (e *Executor) waitForApproval(ctx context.Context, stepName types.StepName) (approvalResponse, error) {
 	e.mu.Lock()
 	approvalCh := e.approvalCh
-	if !e.waiting || e.waitingStep != stepName || approvalCh == nil {
+	if e.waitingStep != stepName || approvalCh == nil {
 		approvalCh = make(chan approvalResponse, 1)
 		e.approvalCh = approvalCh
 	}
