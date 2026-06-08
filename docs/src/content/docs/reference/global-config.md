@@ -26,7 +26,6 @@ agent_args_override:
   codex:
     - -m
     - gpt-5.4
-    - --full-auto
 
 ci_timeout: "4h"
 
@@ -137,7 +136,7 @@ For structured `codex` runs, no-mistakes also appends its own `--output-schema <
 Smart defaults:
 
 - For `claude`, supplying `--permission-mode` (or `--dangerously-skip-permissions`) suppresses the default `--dangerously-skip-permissions`.
-- For `codex`, no-mistakes defaults to `--sandbox workspace-write --ask-for-approval on-request`. Supplying `--ask-for-approval`, `--sandbox`, or `--dangerously-bypass-approvals-and-sandbox` suppresses those defaults.
+- For `codex`, no-mistakes defaults to `--sandbox workspace-write`. Supplying `--sandbox` or `--dangerously-bypass-approvals-and-sandbox` suppresses that default.
 
 Example:
 
@@ -151,7 +150,6 @@ agent_args_override:
   codex:
     - -m
     - gpt-5.4
-    - --full-auto
   rovodev:
     - --profile
     - work
